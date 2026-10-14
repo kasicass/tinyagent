@@ -1,1 +1,4 @@
-[].
+[{<<"erlangchain">>,
+  {git,"https://github.com/kasicass/erlangchain.git",
+       {ref,"9442731141c4b75467a86ee046253bf8e5dc617c"}},
+  0}].
