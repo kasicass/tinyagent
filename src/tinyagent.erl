@@ -13,7 +13,7 @@
 %%====================================================================
 
 %% escript Entry point
-main(Args) ->
+main(_Args) ->
     run_coding_agent_loop(),
     erlang:halt(0).
 
@@ -25,14 +25,24 @@ run_coding_agent_loop() ->
     io:format("~sYou~s", [?YOUR_COLOR, ?RESET_COLOR]),
     case io:get_line(": ") of
         eof ->
-            io:format("~n~sBot~s: Bye!~n", [?ASSISTANT_COLOR, ?RESET_COLOR]),
-            ok;
+            io:format("~n"),
+            bot_say("Bye!");
         {error, Reason} ->
             io:format("Error: ~p~n", [Reason]),
             run_coding_agent_loop();
         Line ->
-            Text = string:trim(Line),
-            io:format("Say: ~s~n", [Text]),
+            Ask = string:trim(Line),
+            Answer = execute_llm_call([#{role => user, content => Ask}]),
+            bot_say(Answer),
             run_coding_agent_loop()
     end.
+
+-spec execute_llm_call([map()]) -> binary().
+execute_llm_call(Conversation) ->
+    {ok, #{content := Text}} = llm:chat(big, Conversation),
+    Text.
+
+-spec bot_say(binary()) -> ok.
+bot_say(Text) ->
+    io:format("~sBot~s: ~ts~n", [?ASSISTANT_COLOR, ?RESET_COLOR, Text]).
 
