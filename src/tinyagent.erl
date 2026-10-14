@@ -34,7 +34,17 @@ run_coding_agent_loop() ->
             Ask = string:trim(Line),
             Answer = execute_llm_call([#{role => user, content => Ask}]),
             bot_say(Answer),
+            #{ content := Text } = read_file_tool("src/tinyagent.app.src"),
+            bot_say(Text),
             run_coding_agent_loop()
+    end.
+
+-spec read_file_tool(binary()) -> map().
+read_file_tool(Filename) ->
+    Path = filename:absname(Filename),
+    case file:read_file(Path) of
+        {ok, Bin} -> #{file_path => Path, content => Bin};
+        {error, R} -> #{file_path => Path, content => lists:flatten(io_lib:format("error: ~p", [R]))}
     end.
 
 -spec execute_llm_call([map()]) -> binary().
