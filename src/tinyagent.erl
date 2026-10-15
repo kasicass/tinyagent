@@ -18,6 +18,37 @@ main(_Args) ->
     erlang:halt(0).
 
 %%====================================================================
+%% Tool functions
+%%====================================================================
+
+-spec read_file_tool(binary()) -> map().
+read_file_tool(Filename) ->
+    Path = filename:absname(Filename),
+    case file:read_file(Path) of
+        {ok, Bin} -> #{file_path => Path, content => Bin};
+        {error, R} -> #{file_path => Path, content => lists:flatten(io_lib:format("error: ~p", [R]))}
+    end.
+
+-spec get_file_type(string(), string()) -> string().
+get_file_type(Path, Name) ->
+    FilePath = filename:join(Path, Name),
+    case filelib:is_dir(FilePath) of
+        true -> "dir";
+        false -> "file"
+    end.
+
+-spec list_files_tool(binary()) -> map().
+list_files_tool(Path) ->
+    FullPath = filename:absname(Path),
+    Files = case file:list_dir(FullPath) of
+        {ok, Entries} ->
+            [#{filename => Name, type => get_file_type(FullPath, Name)} || Name <- Entries];
+        {error, _Reason} ->
+            []
+    end,
+    #{path => FullPath, files => Files}.
+
+%%====================================================================
 %% Internal functions
 %%====================================================================
 
@@ -31,20 +62,14 @@ run_coding_agent_loop() ->
             io:format("Error: ~p~n", [Reason]),
             run_coding_agent_loop();
         Line ->
-            Ask = string:trim(Line),
-            Answer = execute_llm_call([#{role => user, content => Ask}]),
-            bot_say(Answer),
-            #{ content := Text } = read_file_tool("src/tinyagent.app.src"),
+            % Ask = string:trim(Line),
+            % Answer = execute_llm_call([#{role => user, content => Ask}]),
+            % bot_say(Answer),
+            Result = list_files_tool("."),
+            io:format("list_files: ~p~n", [Result]),
+            Text = "aaa",
             bot_say(Text),
             run_coding_agent_loop()
-    end.
-
--spec read_file_tool(binary()) -> map().
-read_file_tool(Filename) ->
-    Path = filename:absname(Filename),
-    case file:read_file(Path) of
-        {ok, Bin} -> #{file_path => Path, content => Bin};
-        {error, R} -> #{file_path => Path, content => lists:flatten(io_lib:format("error: ~p", [R]))}
     end.
 
 -spec execute_llm_call([map()]) -> binary().
